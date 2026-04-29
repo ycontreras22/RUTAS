@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TT Audit — Revisitas Campaña Velo 8mg</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root{--bg:#F4F6FA;--surface:#FFFFFF;--panel:#F8F9FC;--border:#DDE2EE;--blue:#1A4BAD;--blue2:#2E63D4;--text:#1A2035;--muted:#6B7592;--subtle:#C8D0E4}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh;overflow-x:hidden}
+.header{background:var(--surface);border-bottom:2px solid var(--blue);padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:54px;position:sticky;top:0;z-index:1000;box-shadow:0 1px 6px rgba(0,0,0,.06)}
+.hdr-left{display:flex;align-items:center;gap:14px}
+.logo{display:flex;align-items:center;gap:9px}
+.logo-mark{width:30px;height:30px;background:var(--blue);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:flex;align-items:center;justify-content:center}
+.logo-mark span{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;color:#fff}
+.logo-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;letter-spacing:.8px;color:var(--blue);text-transform:uppercase}
+.hdr-div{width:1px;height:26px;background:var(--border)}
+.hdr-sub{font-size:11px;color:var(--muted)}
+.badge{background:var(--panel);border:1px solid var(--border);border-radius:3px;padding:3px 9px;font-size:11px;color:var(--muted)}
+.badge strong{color:var(--blue)}
+.controls{background:var(--surface);border-bottom:1px solid var(--border);padding:8px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ctrl-lbl{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.day-pills{display:flex;gap:4px}
+.day-pill{padding:4px 14px;border-radius:3px;border:1px solid var(--border);font-size:12px;font-weight:500;cursor:pointer;background:var(--surface);color:var(--muted);transition:all .15s;font-family:'Barlow',sans-serif}
+.day-pill:hover{border-color:var(--blue);color:var(--blue)}
+.day-pill.active{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:700}
+.gmaps-btn{margin-left:auto;display:flex;align-items:center;gap:5px;padding:5px 14px;background:transparent;border:1px solid var(--blue);border-radius:3px;color:var(--blue);font-size:10px;font-weight:600;font-family:'Barlow Condensed',sans-serif;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;transition:all .15s}
+.gmaps-btn:hover{background:var(--blue);color:#fff}
+.stats-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:6px 20px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.stat-item{display:flex;align-items:baseline;gap:5px}
+.stat-val{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--blue);line-height:1}
+.stat-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.stat-sep{width:1px;height:18px;background:var(--border)}
+.ptag{padding:2px 7px;border-radius:2px;font-size:10px;font-weight:600;background:rgba(26,75,173,.09);color:#1A4BAD;border:1px solid rgba(26,75,173,.2)}
+.main{display:grid;grid-template-columns:360px 1fr;height:calc(100vh - 54px - 42px - 38px)}
+@media(max-width:760px){.main{grid-template-columns:1fr;height:auto}}
+.sidebar{background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.sidebar-head{padding:8px 12px;border-bottom:1px solid var(--border)}
+.sidebar-title{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.7px}
+.route-list{flex:1;overflow-y:auto;padding:5px}
+.route-list::-webkit-scrollbar{width:3px}
+.route-list::-webkit-scrollbar-thumb{background:var(--subtle);border-radius:2px}
+.stop-card{display:flex;gap:8px;padding:9px 10px;border-radius:4px;margin-bottom:4px;border:1px solid transparent;cursor:pointer;transition:all .12s;position:relative}
+.stop-card:hover{background:var(--surface);border-color:var(--border)}
+.stop-card.selected{background:var(--surface);border-color:var(--blue);border-left-width:3px;padding-left:8px}
+.stop-num-wrap{display:flex;flex-direction:column;align-items:center;flex-shrink:0}
+.stop-num{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff}
+.stop-conn{width:1px;height:16px;margin:2px 0;background:rgba(26,75,173,.2)}
+.stop-body{flex:1;min-width:0}
+.stop-name{font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.stop-meta{display:flex;align-items:center;gap:5px;margin-bottom:3px}
+.stop-time{font-size:10px;font-weight:700;font-family:'Barlow Condensed',sans-serif;color:var(--blue);background:rgba(26,75,173,.09);padding:1px 5px;border-radius:2px}
+.stop-dist{font-size:10px;color:var(--muted)}
+.stop-dur{font-size:10px;color:var(--muted)}
+.stop-ot{font-size:10px;color:var(--blue);font-weight:500;line-height:1.35;padding:3px 6px;border-radius:3px;border-left:2px solid var(--blue);background:rgba(26,75,173,.05);margin-bottom:3px}
+.stop-cig{display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#1E8A5E;background:rgba(30,138,94,.09);border:1px solid rgba(30,138,94,.2);padding:1px 6px;border-radius:2px;margin-top:2px}
+.nav-link{display:inline-flex;align-items:center;gap:2px;font-size:10px;color:var(--blue);margin-top:3px;text-decoration:none}
+#map{flex:1;height:100%;min-height:400px}
+.leaflet-container{background:#F0F4F8}
+.bat-marker{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-family:'Barlow',sans-serif;color:white;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.bat-marker.selected{box-shadow:0 0 0 3px rgba(26,75,173,.35),0 2px 8px rgba(0,0,0,.4)!important}
+.leaflet-popup-content-wrapper{background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.leaflet-popup-content{margin:0}
+.leaflet-popup-tip{background:#fff}
+.leaflet-popup-close-button{color:var(--muted)!important;top:7px!important;right:9px!important;font-size:16px!important}
+.popup-inner{padding:13px 14px;min-width:270px;max-width:340px}
+.popup-header{display:flex;align-items:flex-start;gap:9px;margin-bottom:10px}
+.popup-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;margin-top:2px}
+.popup-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px;line-height:1.2}
+.popup-cadena{font-size:10px;font-weight:600;letter-spacing:.4px}
+.popup-hora{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;color:var(--blue);background:rgba(26,75,173,.09);padding:1px 6px;border-radius:2px;margin-top:3px}
+.ot-block{background:rgba(26,75,173,.05);border:1px solid rgba(26,75,173,.18);border-left:3px solid var(--blue);border-radius:5px;padding:8px 10px;margin-bottom:9px}
+.ot-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--blue);margin-bottom:4px;display:flex;align-items:center;gap:4px}
+.ot-text{font-size:12px;color:var(--text);line-height:1.45;font-weight:500}
+.popup-grid{display:grid;grid-template-columns:auto 1fr;gap:3px 9px;margin-bottom:8px}
+.popup-key{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;font-weight:500;padding-top:1px;white-space:nowrap}
+.popup-val{font-size:11px;color:var(--text);line-height:1.4}
+.popup-cig{display:flex;align-items:center;gap:5px;padding:5px 8px;background:rgba(30,138,94,.08);border:1px solid rgba(30,138,94,.2);border-radius:3px;margin-bottom:8px}
+.popup-cig-text{font-size:11px;color:#1E8A5E;font-weight:500}
+.popup-actions{display:flex;gap:5px}
+.popup-btn{flex:1;padding:6px;border-radius:4px;font-size:11px;font-weight:600;font-family:'Barlow',sans-serif;cursor:pointer;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:4px;border:none;transition:opacity .12s}
+.popup-btn:hover{opacity:.85}
+.popup-btn-maps{background:#4285F4;color:#fff}
+.popup-btn-waze{background:#33CCFF;color:#000}
+.leaflet-control-zoom a{background:#fff!important;color:var(--text)!important;border-color:var(--border)!important}
+.leaflet-bar{border:1px solid var(--border)!important;box-shadow:0 2px 6px rgba(0,0,0,.07)!important}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-left">
+    <div class="logo">
+      <div class="logo-mark"><span>TT</span></div>
+      <span class="logo-title">TT Audit</span>
+    </div>
+    <div class="hdr-div"></div>
+    <span class="hdr-sub">Revisitas Campaña Velo 8mg · Lima 2025</span>
+  </div>
+  <div class="badge">Total: <strong>55 puntos</strong> · 4 días · 1 mercaderista</div>
+</div>
+
+<div class="controls">
+  <span class="ctrl-lbl">Día</span>
+  <div class="day-pills">
+    <button class="day-pill active" onclick="selectDay(1,this)">01</button>
+    <button class="day-pill" onclick="selectDay(2,this)">02</button>
+    <button class="day-pill" onclick="selectDay(3,this)">03</button>
+    <button class="day-pill" onclick="selectDay(4,this)">04</button>
+  </div>
+  <button class="gmaps-btn" onclick="openFullRoute()">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+    Ver ruta completa en Google Maps
+  </button>
+</div>
+
+<div class="stats-bar" id="statsBar"></div>
+
+<div class="main">
+  <div class="sidebar">
+    <div class="sidebar-head">
+      <div class="sidebar-title" id="sidebarTitle">Paradas del día</div>
+    </div>
+    <div class="route-list" id="routeList"></div>
+  </div>
+  <div id="map"></div>
+</div>
+
+<script>
+const CADENA_CLR={OXXO:'#C9333A',TAMBO:'#D9742B',PRIMAX:'#2A5BA8',REPSOL:'#B89B1F',AVA:'#7B45B0',BODEGA:'#5A6070',OTRO:'#5A6070'};
+const VISIT_MIN={'DISPENSER MULTICATEGORÍA':25,'FACING':20,'REELS / FACING / NICHO':35,'REELS / FACING':30,'REELS':20,'FACING / DISPENSER MULTICATEGORÍA':30,'REELS / FACING / DISPENSER MULTICATEGORÍA':40};
+const START=480, TRAVEL=8, BLUE='#1A4BAD';
+let curDay=1, selIdx=null;
+let map, markers=[], polylines=[];
+
+const DATA = {"1": [{"orden": 1, "pos": "TAMBO - BASE NAVAL", "cadena": "TAMBO", "distrito": "CALLAO", "proyecto": "DISPENSER MULTICATEGORÍA", "ot": "IMPLEMENTAR PARED Y FRANJA VELO + FRANJA VUSE", "com_cig": "", "cigarrera": "", "cant_cig": "", "direccion": "Av. Contralmirante Mora N° 791 Puerta 7 Base Naval Callao", "lat": -12.0421210307041, "lon": -77.1361301490761}, {"orden": 2, "pos": "PRIMAX - E/S EL CARMELO", "cadena": "PRIMAX", "distrito": "SAN MIGUEL", "proyecto": "REELS / FACING / NICHO", "ot": "IMPLEMENTAR NICHO", "com_cig": "VELO", "cigarrera": "STAR ONE CON REEL", "cant_cig": "1", "direccion": "AV. LA MARINA 3112 SAN MIGUEL", "lat": -12.075225, "lon": -77.0971743}, {"orden": 3, "pos": "TAMBO - PRECURSORES-C2", "cadena": "TAMBO", "distrito": "SAN MIGUEL", "proyecto": "DISPENSER MULTICATEGORÍA", "ot": "IMPLEMENTAR PARED Y FRANJA VELO + FRANJA VUSE", "com_cig": "", "cigarrera": "", "cant_cig": "", "direccion": "AV PRECURSORES 287 URB MARANGA - SAN MIGUEL", "lat": -12.071378, "lon": -77.090478}, {"orden": 4, "pos": "TAMBO - BRIGIDA", "cadena": "TAMBO", "distrito": "SAN MIGUEL", "proyecto": "FACING", "ot": "IMPLEMENTAR PLACA FACING", "com_cig": "", "cigarrera": "BLACK PIANO SIMPLE", "cant_cig": "1", "direccion": "AV. BRÍGIDA LT40 MZ 32 SAN MIGUEL", "lat": -12.08285, "lon": -77.08918}, {"orden": 5, "pos": "TAMBO - VALER", "cadena": "TAMBO", "distrito": "PUEBLO LIBRE", "proyecto": "REELS / FACING / NICHO", "ot": "IMPLEMENTAR REEL VELO, VUSE 3K Y ECLIPSE + IMPLEMENTAR PLACA FACING Y NICHO", "com_cig": "VELO", "cigarrera": "STAR ONE CON REEL", "cant_cig": "1", "direccion": "JR. CUEVA NRO. 718 (MAGDALENA VIEJA)", "lat": -12.07729, "lon": -77.07479}, {"orden": 6, "pos": "TAMBO - TDA SUCRE", "cadena": "TAMBO", "distrito": "PUEBLO LIBRE", "proyecto": "FACING", "ot": "IMPLEMENTAR PLACA FACING", "com_cig": "", "cigarrera": "BLACK PIANO SIMPLE", "cant_cig": "1", "direccion": "AV. SUCRE NRO. 1183", "lat": -12.08269, "lon": -77.06692}, {"orden": 7, "pos": "TAMBO - BOLIVAR-C11", "cadena": "TAMBO", "distrito": "PUEBLO LIBRE", "proyecto": "REELS / FACING / NICHO", "ot": "IMPLEMENTAR PLACA FACING Y NICHO", "com_cig": "VELO", "cigarrera": "STAR ONE CON REEL", "cant_cig": "1", "direccion": "AV. SIMON BOLIVAR NRO. 1171 URB. SAN BERNARDO", "lat": -12.07256, "lon": -77.06588}, {"orden": 8, "pos": "REPSOL - BOLIVAR 2", "cadena": "REPSOL", "distrito": "PUEBLO LIBRE", "proyecto": "FACING", "ot": "IMPLEMENTAR PLACA FACING", "com_cig": "", "cigarrera": "BLACK PIANO DOBLE", "cant_cig": "2", "direccion": "ESQ. AV. BOLIVAR 330  ESQ CON AV. DEL RIO", "lat": -12.0731042, "lon": -77.0557721}, {"orden": 9, "pos": "TAMBO - BOLIVAR-C1", "cadena": "TAMBO", "distrito": "PUEBLO LIBRE", "proyecto": "REELS / FACING / NICHO", "ot": "IMPLEMENTAR NICHO", "com_cig": "VELO", "cigarrera": "STAR ONE CON REEL", "cant_cig": "1", "direccion": "AV. BOLIVAR NRO. 126", "lat": -12.0748, "lon": -77.054}, {"orden": 10, "pos": "PRIMAX - E/S FLORA TRISTAN", "cadena": "PRIMAX", "distrito": "MAGDALENA DEL MAR", "proyecto": "REELS / FACING", "ot": "IMPLEMENTAR REEL VELO, VUSE 3K Y ECLIPSE + IMPLEMENTAR PLACA FACING", "com_cig": "VELO", "cigarrera": "STAR LITE CON REEL", "cant_cig": "1", "direccion": "AV. JAVIER PRADO OESTE 2504 MAGADALENA DEL MAR", "lat": -12.0940308, "lon": -77.0571287}, {"orden": 11, "pos": "PRIMAX - E/S CASTAÑOS", "cadena": "PRIMAX", "distrito": "SAN ISIDRO", "proyecto": "REELS / FACING / NICHO", "ot": "IMPLEMENTAR REEL VELO, VUSE 3K Y ECLIPSE + IMPLEMENTAR PLACA FACING Y NICHO", "com_cig": "VELO", "cigarrera": "STAR ONE CON REEL", "cant_cig": "1", "direccion": "AV JAVIER PRADO OESTE 1895 SAN ISIDRO.", "lat": -12.0950372, "lon": -77.0502193}, {"orden": 12, "pos": "PRIMAX - E/S ORRANTIA", "cadena": "PRIMAX", "distrito": "MAGDALENA DEL MAR", "proyecto": "REELS / FACING / NICHO", "ot": "IMPLEMENTAR NICHO", "com_cig": "VELO", "cigarrera": "STAR ONE CON REEL", "cant_cig": "1", "direccion": "AV  DEL EJERCITO 965", "lat": -12.1003619, "lon": -77.0621364}, {"orden": 13, "pos": "TAMBO - EJERCITO-C2", "cadena": "TAMBO", "distrito": "MAGDALENA DEL MAR", "proyecto": "DISPENSER MULTICATEGORÍA", "ot": "IMPLEMENTAR PARED Y FRANJA VELO + FRANJA VUSE", "com_cig": "", "cigarrera": "", "cant_cig": "", "direccion": "AV EL EJÉRCITO 282 MAGDALENA DEL MAR", "lat": -12.09773, "lon": -77.07051}, {"orden": 14, "pos": "PRIMAX - E/S MAGDALENA", "cadena": "PRIMAX", "distrito": "MAGDALENA DEL MAR", "proyecto": "DISPENSER MULTICATEGORÍA", "ot": "IMPLEMENTAR PARED , FRANJA Y FLAP VELO + STICKER VUSE", "com_cig": "", "cigarrera": "", "cant_cig": "", "direccion": "AV  DEL EJERCITO 101", "lat": -12.0973033, "lon": -77.071696}], "2": [{"orden": 1, "pos": "OXXO - JULIAN", "cadena": "OXXO", "distrito": "MIRAFLORES", "proyecto": "DISPENSER MULTICATEGORÍA", "ot": "IMPLEMENTAR PARED Y FRANJA VELO", "com_cig": "", "cigarrera": "", "cant_cig": "", "direccion": "Av. Ricardo Palma 999. Miraflores", "lat": -12.122522702035, "lon": -77.019738862438}, {"orden": 2, "pos": "REPSOL - MIRAFLORES", "cadena": "REPSOL", "distrito": "MIRAFLORES", "proyecto": "REELS / FACING", "ot": "IMPLEMENTAR PLACA FACING", "com_cig": "VELO/ VUSE 3K", "cigarrera": "BLACK PIANO DOBLE+REEL", "cant_cig": "2", "direccion": "AV ROOSEVELT 5672 MIRAFLORES", "lat": -12.1205142, "lon": -77.0187759}, {"orden": 3, "pos": "PRIMAX - LISTO SURQUILLO", "cadena": "PRIMAX", "distrito": "SURQUILLO", "proyecto": "FACING / DISPENSER MULTICATEGORÍA", "ot": "IMPLEMENTAR PLACA FACING + IMPLEMENTAR PARED , FRANJA Y FLAP VELO + STICKER VUSE", "com_cig": "", "cigarrera": "STAR LITE", "cant_cig": "1", "direccion": "AV. REPUBLICA DE PANAMÁ 5185 SURQUILLO", "lat": -12.116189, "lon": -77.0179802}, {"orden": 4, "pos": "PRIMAX - E/S AURORA", "cadena": "PRIMAX", "distrito": "MIRAFLORES", "proyecto": "FACING", "ot": "IMPLEMENTAR PLACA FACING", "com_cig": "", "cigarrera": "BLACK PIANO SIMPLE", "cant_cig": "1", "direccion": "CALLE A. SCHEREIBER 124 CON CALLE SABOGAL AURORA -  MIRAFLORES", "lat": -12.1227475, "lon": -77.0111056}, {"orden": 5, "pos": "OXXO - MAKRO", "cadena": "OXXO", "distrito": "MIRAFLORES", "proyecto": "DISPENSER MULTICATEGORÍA", "ot": "IMPLEMENTAR PARED Y FRANJA VELO", "com_cig": "", "cigarrera": "", "cant_cig": "", "direccion": "Av. Tomas Marsano 2670. Miraflores", "lat": -12.126626771251, "lon": -77.003097723086}, {"orden": 6, "pos": "PRIMAX - E/S LA CALERA", "cadena": "PRIMAX", "distrito": "SURQUILLO", "proyecto": "FACING", "ot": "IMPLEMENTAR PLACA FACING", "com_cig": "", "cigarrera": "BLACK PIANO SIMPLE", "cant_cig": "1", "direccion": "AV. AVIACION 4524 - SURQUILLO", "lat": -12.1197817, "lon": -76.9988248}, {"orden": 7, "pos": "PRIMAX - LISTO PRIMAVERA", "cadena": "PRIMAX", "distrito": "SURQUILLO", "proyecto": "FACING", "ot": "IMPLEMENTAR PLACA FACING", "com_cig": "", "cigarrera": "BLACK PIANO SIMPLE", "cant_cig": "1", "direccion": "AV. ANGAMOS ESTE N.°2398", "lat": -12.1122184, "lon": -77.0057176}, {"orden": 8, "pos": "TAMBO - LIMATAMBO2", "cadena": "TAMBO", "distrito": "SAN BORJA", "proyecto": "DISPENSER MULTICATEGORÍA", "ot": "IMPLEMENTAR PARED Y FRANJA VELO + FRANJA VUSE", "com_cig": "", "cigarrera": "", "cant_cig": "", "direccion": "Alameda Marquina Rafael Nº 401, Mz. 3, Lote 14, Conjunto urbano Torres de Limatambo, distrito de San Borja,", "lat": -12.108466, "lon": -77.00388}, {"orden": 9, "pos": "TAMBO - PRIMAVERA-C1", "cadena": "TAMBO", "distrito": "SURCO", "proyecto": "DISPENSER MULTICATEGORÍA", "ot": "IMPLEMENTAR PARED Y FRANJA VELO + FRANJA VUSE", "com_cig": "", "cigarrera": "", "cant_cig": "", "direccion": "Av. Primavera Nº 148 – Tienda A03 – A22, urbanización Tambo de Monterrico, distrito de Santiago de Surco, provincia y departamento de Lima", "lat": -12.1115267993995, "lon": -76.99268781034}, {"orden": 10, "pos": "PRIMAX - E/S TOMAS MARSANO", "cadena": "PRIMAX", "distrito": "SANTIAGO DE SURCO", "proyecto": "FACING", "ot": "IMPLEMENTAR PLACA FACING", "com_cig": "", "cigarrera": "BLACK PIANO SIMPLE", "cant_cig": "1", "direccion": "AV. TOMAS MARSANO ESQ. CON AV. SURCO - SANTIAGO DE SURCO", "lat": -12.1392417, "lon": -76.9942517}, {"orden": 11, "pos": "TAMBO - CORBETA", "cadena": "TAMBO", "distrito": "SANTIAGO DE SURCO", "proyecto": "DISPENSER MULTICATEGORÍA", "ot": "IMPLEMENTAR PARED Y FRANJA VELO + FRANJA VUSE", "com_cig": "", "cigarrera": "", "cant_cig": "", "direccion": "AV JORGE CHÁVEZ 1519 SURCO LIMA", "lat": -12.14509, "lon": -77.00797}, {"orden": 12, "pos": "TAMBO - GUARDIAPERUANA-CHORRILLOS", "cadena": "TAMBO", "distrito": "CHORRILLOS", "proyecto": "DISPENSER MULTICATEGORÍA", "ot": "IMPLEMENTAR PARED Y FRANJA VELO + FRANJA VUSE", "com_cig": "", "cigarrera": "", "cant_cig": "", "direccion": "Av. Guardia Peruana, Urb. Parcelación La Campiña, Mz. G, Lt. 22, distrito de Chorrillos", "lat": -12.17963173, "lon": -77.00310946}, {"orden": 13, "pos": "TAMBO - SANPEDRO-CHORRILLOS", "cadena": "TAMBO", "distrito": "CHORRILLOS", "proyecto": "DISPENSER MULTICATEGORÍA", "ot": "IMPLEMENTAR PARED Y FRANJA VELO + FRANJA VUSE", "com_cig": "", "cigarrera": "", "cant_cig": "", "direccion": "AV. EL TRIUNFO N°750 AAHH TUPAC AMARU DE VILLA", "lat": -12.1965591, "lon": -76.9821349}, {"orden": 14, "pos": "AVA - EL TREN", "cadena": "AVA", "distrito": "LURIN", "proyecto": "DISPENSER MULTICATEGORÍA", "ot": "IMPLEMENTAR PARED Y FRANJA VELO", "com_cig": "", "cigarrera": "", "cant_cig": "", "direccion": "CARRETERA PANAMERICANA Km 24 - Lurin (Grifo AVA, ex Pecsa, antes de Kio)", "lat": -12.2463869498999, "lon": -76.9369991951925}], "3": [{"orden": 1, "pos": "PRIMAX - E/S DUEÑAS", "cadena": "PRIMAX", "distrito": "CERCADO DE LIMA", "proyecto": "FACING", "ot": "CORREGIR PLACA FACING", "com_cig": "", "cigarrera": "STAR LITE", "cant_cig": "1", "direccion": "AV. ARGENTINA 1815 ( CERCADO DE LIMA)", "lat": -12.0460262, "lon": -77.0654939}, {"orden": 2, "pos": "PRIMAX - E/S SUDAMERICANO", "cadena": "PRIMAX", "distrito": "CERCADO DE LIMA", "proyecto": "REELS / FACING / DISPENSER MULTICATEGORÍA", "ot": "IMPLEMENTAR REEL VELO, VUSE 3K Y ECLIPSE + IMPLEMENTAR PLACA FACING + IMPLEMENTAR PARED , FRANJA Y FLAP VELO + STICKER VUSE", "com_cig": "VELO", "cigarrera": "STAR LITE CON REEL", "cant_cig": "1", "direccion": "AV. O. R. BENAVIDES(EX COLONIAL) 871 _ CERCADO DE LIMA", "lat": -12.0477311, "lon": -77.0535236}, {"orden": 3, "pos": "REPSOL - SARMIENTO", "cadena": "REPSOL", "distrito": "JESUS MARIA", "proyecto": "FACING", "ot": "IMPLEMENTAR PLACA FACING", "com_cig": "", "cigarrera": "BLACK PIANO SIMPLE", "cant_cig": "1", "direccion": "AV ARENALES 400 CON REPUBLICA DE CHILE", "lat": -12.0687904, "lon": -77.0382054}, {"orden": 4, "pos": "TAMBO - SACO-C2", "cadena": "TAMBO", "distrito": "CERCADO DE LIMA", "proyecto": "DISPENSER MULTICATEGORÍA", "ot": "IMPLEMENTAR PARED Y FRANJA VELO + FRANJA VUSE", "com_cig": "", "cigarrera": "", "cant_cig": "", "direccion": "JR. SACO OLIVEROS 261(SANTA BEATRIZ)", "lat": -12.06813, "lon": -77.03621}, {"orden": 5, "pos": "TAMBO - AREQUIPA-C14", "cadena": "TAMBO", "distrito": "CERCADO DE LIMA", "proyecto": "DISPENSER MULTICATEGORÍA", "ot": "IMPLEMENTAR PARED Y FRANJA VELO + FRANJA VUSE", "com_cig": "", "cigarrera": "", "cant_cig": "", "direccion": "Av. Arequipa N°1475", "lat": -12.079124387075, "lon": -77.0350234220884}, {"orden": 6, "pos": "TAMBO - RISSO", "cadena": "TAMBO", "distrito": "LINCE", "proyecto": "FACING", "ot": "IMPLEMENTAR PLACA FACING", "com_cig": "", "cigarrera": "BLACK PIANO SIMPLE", "cant_cig": "1", "direccion": "AV ARENALES #2140 LINCE", "lat": -12.08612, "lon": -77.03546}, {"orden": 7, "pos": "TAMBO - PALERMO", "cadena": "TAMBO", "distrito": "LA VICTORIA", "proyecto": "DISPENSER MULTICATEGORÍA", "ot": "IMPLEMENTAR PARED Y FRANJA VELO + FRANJA VUSE", "com_cig": "", "cigarrera": "", "cant_cig": "", "direccion": "AV PALERMO 501-505 ( LA VICTORIA)", "lat": -12.08054, "lon": -77.02275}, {"orden": 8, "pos": "TAMBO - CANADA-C10", "cadena": "TAMBO", "distrito": "LA VICTORIA", "proyecto": "DISPENSER MULTICATEGORÍA", "ot": "IMPLEMENTAR PARED Y FRANJA VELO + FRANJA VUSE", "com_cig": "", "cigarrera": "", "cant_cig": "", "direccion": "AV CANADA 1090(LA VICTORIA)", "lat": -12.08336, "lon": -77.01467}, {"orden": 9, "pos": "PRIMAX - E/S ARRIOLA", "cadena": "PRIMAX", "distrito": "LA VICTORIA", "proyecto": "FACING", "ot": "IMPLEMENTAR PLACA FACING", "com_cig": "", "cigarrera": "STAR LITE", "cant_cig": "1", "direccion": "AV. NICOLÁS ARRIOLA 710( LA VICTORIA)", "lat": -12.0833498, "lon": -77.0134487}, {"orden": 10, "pos": "TAMBO - ARRIOLA", "cadena": "TAMBO", "distrito": "LA VICTORIA", "proyecto": "DISPENSER MULTICATEGORÍA", "ot": "IMPLEMENTAR PARED Y FRANJA VELO + FRANJA VUSE", "com_cig": "", "cigarrera": "", "cant_cig": "", "direccion": "AV.NICOLAS  ARRIOLA 397(LA VICTORIA)", "lat": -12.08612, "lon": -77.01564}, {"orden": 11, "pos": "PRIMAX - E/S AULY", "cadena": "PRIMAX", "distrito": "SAN JUAN DE LURIGANCHO", "proyecto": "FACING / DISPENSER MULTICATEGORÍA", "ot": "IMPLEMENTAR PLACA FACING + IMPLEMENTAR PARED , FRANJA Y FLAP VELO + STICKER VUSE", "com_cig": "", "cigarrera": "STAR LITE", "cant_cig": "1", "direccion": "AV PROCERES DE LA INDEPENDENCIA MZ K1 LTES 33-34-35 SJL", "lat": -11.9851507, "lon": -77.0071274}, {"orden": 12, "pos": "TAMBO - GIUFUENTE", "cadena": "TAMBO", "distrito": "COMAS", "proyecto": "REELS", "ot": "IMPLEMENTAR REEL VUSE 3K Y ECLIPSE", "com_cig": "VUSE 3K", "cigarrera": "STAR ONE CON REEL", "cant_cig": "1", "direccion": "MZ P LOTE 24 URB SANTA LUISA", "lat": -11.94187, "lon": -77.06083}, {"orden": 13, "pos": "OXXO - COLLIQUE", "cadena": "OXXO", "distrito": "COMAS", "proyecto": "DISPENSER MULTICATEGORÍA", "ot": "IMPLEMENTAR PARED Y FRANJA VELO", "com_cig": "", "cigarrera": "", "cant_cig": "", "direccion": "Av. Micaela Bastidas & Av.A. Comas", "lat": -11.927189094078, "lon": -77.058774754193}, {"orden": 14, "pos": "PRIMAX - LISTO TRAPICHE", "cadena": "PRIMAX", "distrito": "COMAS", "proyecto": "REELS / FACING", "ot": "IMPLEMENTAR REEL VELO, VUSE 3K Y ECLIPSE + IMPLEMENTAR PLACA FACING", "com_cig": "VELO", "cigarrera": "STAR LITE CON REEL", "cant_cig": "1", "direccion": "AV.HEORES DEL ALTO CENEPA N°697  FUNDO CHACRA CERRO -COMAS. (EX AUTOPISTA TRAPICHE)", "lat": -11.9210898, "lon": -77.0621214}], "4": [{"orden": 1, "pos": "TAMBO - CONQUISTADORES-C1", "cadena": "TAMBO", "distrito": "SAN ISIDRO", "proyecto": "DISPENSER MULTICATEGORÍA", "ot": "IMPLEMENTAR PARED Y FRANJA VELO + FRANJA VUSE", "com_cig": "", "cigarrera": "", "cant_cig": "", "direccion": "Av. Los Conquistadores 0125 -0127, distrito de San Isidro, provincia y departamento Lima", "lat": -12.103131961852, "lon": -77.036893718063}, {"orden": 2, "pos": "PRIMAX - E/S AREQUIPA 1", "cadena": "PRIMAX", "distrito": "SAN ISIDRO", "proyecto": "REELS / FACING / NICHO", "ot": "IMPLEMENTAR NICHO", "com_cig": "VELO", "cigarrera": "STAR ONE CON REEL", "cant_cig": "1", "direccion": "AV. AREQUIPA 3325_ SAN ISIDRO", "lat": -12.0984314, "lon": -77.032337}, {"orden": 3, "pos": "REPSOL - AREQUIPA", "cadena": "REPSOL", "distrito": "MIRAFLORES", "proyecto": "REELS / FACING / NICHO", "ot": "IMPLEMENTAR NICHO", "com_cig": "VELO", "cigarrera": "STAR ONE CON REEL", "cant_cig": "1", "direccion": "AV. AREQUIPA 5080 Y ENRIQUE PALACIOS", "lat": -12.1169585, "lon": -77.0297309}, {"orden": 4, "pos": "TAMBO - ROOSEVELT-C56", "cadena": "TAMBO", "distrito": "MIRAFLORES", "proyecto": "DISPENSER MULTICATEGORÍA", "ot": "IMPLEMENTAR PARED Y FRANJA VELO + FRANJA VUSE", "com_cig": "", "cigarrera": "", "cant_cig": "", "direccion": ":Av.Roosevelt 5624-5628 - Miraflores.", "lat": -12.1188, "lon": -77.02763}, {"orden": 5, "pos": "TAMBO - DIAGONAL", "cadena": "TAMBO", "distrito": "MIRAFLORES", "proyecto": "REELS / FACING / NICHO", "ot": "IMPLEMENTAR NICHO", "com_cig": "VELO", "cigarrera": "STAR ONE CON REEL", "cant_cig": "1", "direccion": "Av. Diagonal N° 530 -Miraflores", "lat": -12.1224, "lon": -77.03157}, {"orden": 6, "pos": "OXXO - ORDOÑEZ", "cadena": "OXXO", "distrito": "SAN BORJA", "proyecto": "DISPENSER MULTICATEGORÍA", "ot": "IMPLEMENTAR PARED Y FRANJA VELO", "com_cig": "", "cigarrera": "", "cant_cig": "", "direccion": "JR. ORDOÑEZ 190", "lat": -12.1057608, "lon": -77.0074742}, {"orden": 7, "pos": "REPSOL - EL AVION", "cadena": "REPSOL", "distrito": "SAN BORJA", "proyecto": "FACING", "ot": "IMPLEMENTAR PLACA FACING", "com_cig": "", "cigarrera": "BLACK PIANO DOBLE", "cant_cig": "2", "direccion": "AV. AVIACIÓN 3401_ SAN BORJA", "lat": -12.1054831, "lon": -77.0007611}, {"orden": 8, "pos": "PRIMAX - E/S NAVAL", "cadena": "PRIMAX", "distrito": "SAN BORJA", "proyecto": "REELS / FACING / NICHO", "ot": "IMPLEMENTAR NICHO", "com_cig": "VELO", "cigarrera": "STAR ONE CON REEL", "cant_cig": "1", "direccion": "AV. SAN LUIS 2480, SAN BORJA", "lat": -12.0983738, "lon": -76.9951979}, {"orden": 9, "pos": "TAMBO - AVIACION-C24", "cadena": "TAMBO", "distrito": "SAN BORJA", "proyecto": "DISPENSER MULTICATEGORÍA", "ot": "IMPLEMENTAR PARED Y FRANJA VELO + FRANJA VUSE", "com_cig": "", "cigarrera": "", "cant_cig": "", "direccion": "AV AVIACIÓN 2413", "lat": -12.08889, "lon": -77.0033}, {"orden": 10, "pos": "REPSOL - MONTECARLO", "cadena": "REPSOL", "distrito": "ATE VITARTE", "proyecto": "REELS", "ot": "IMPLEMENTAR REEL VUSE 3K Y ECLIPSE", "com_cig": "VUSE 3K", "cigarrera": "STAR LITE CON REEL", "cant_cig": "1", "direccion": "AV. EVITAMIENTO 1904 URB. LOS PARQUES DE MONTERRICO MZ B LOTE 01 AL 06 URB. LOS PARQUE DE MONTERICO ATE", "lat": -12.0773211, "lon": -76.9761146}, {"orden": 11, "pos": "TAMBO - CELIMA", "cadena": "TAMBO", "distrito": "LA MOLINA", "proyecto": "REELS / FACING / NICHO", "ot": "IMPLEMENTAR REEL VELO, VUSE 3K Y ECLIPSE + IMPLEMENTAR PLACA FACING Y NICHO", "com_cig": "VELO", "cigarrera": "STAR ONE CON REEL", "cant_cig": "1", "direccion": "AV. CONSTRUCTORES 107 LA MOLINA", "lat": -12.0675, "lon": -76.9584}, {"orden": 12, "pos": "PRIMAX - E/S UNIVERSIDAD", "cadena": "PRIMAX", "distrito": "LA MOLINA", "proyecto": "REELS / FACING / NICHO", "ot": "IMPLEMENTAR REEL VELO, VUSE 3K Y ECLIPSE + IMPLEMENTAR NICHO", "com_cig": "VELO", "cigarrera": "STAR ONE CON REEL", "cant_cig": "1", "direccion": "AV. UNIVERSIDAD 1275 LA MOLINA", "lat": -12.0751955, "lon": -76.9360732}, {"orden": 13, "pos": "REPSOL - ANGAMOS", "cadena": "REPSOL", "distrito": "SAN BORJA", "proyecto": "FACING", "ot": "IMPLEMENTAR PLACA FACING", "com_cig": "", "cigarrera": "BLACK PIANO SIMPLE", "cant_cig": "1", "direccion": "AV. PRIMAVERA 1095 _ SAN BORJA", "lat": -12.1101882, "lon": -76.9801595}]};
+
+function getPoints(){return DATA[String(curDay)]||[];}
+function calcTimes(pts){
+  let m=START;
+  return pts.map((p,i)=>{if(i>0)m+=TRAVEL;const s=m,d=VISIT_MIN[p.proyecto]||25;m+=d;return{start:s,end:m,dur:d};});
+}
+function fmt(m){return`${Math.floor(m/60)}:${String(m%60).padStart(2,'0')}`;}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+map=L.map('map',{zoomControl:true,attributionControl:false}).setView([-12.1,-77.03],13);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
+L.control.attribution({position:'bottomright'}).addAttribution('© CartoDB').addTo(map);
+
+function renderMap(){
+  const pts=getPoints(), times=calcTimes(pts);
+  markers.forEach(m=>map.removeLayer(m)); markers=[];
+  polylines.forEach(l=>map.removeLayer(l)); polylines=[];
+  if(!pts.length) return;
+
+  const ll=pts.map(p=>[p.lat,p.lon]);
+  polylines.push(L.polyline(ll,{color:BLUE,weight:2.5,opacity:.4,dashArray:'5,4'}).addTo(map));
+
+  // Arrows
+  for(let i=0;i<ll.length-1;i++){
+    const mx=(ll[i][0]+ll[i+1][0])/2,my=(ll[i][1]+ll[i+1][1])/2;
+    const ang=Math.atan2(ll[i+1][1]-ll[i][1],ll[i+1][0]-ll[i][0])*180/Math.PI;
+    polylines.push(L.marker([mx,my],{icon:L.divIcon({className:'',html:`<div style="transform:rotate(${ang}deg)"><svg width="10" height="10" viewBox="-5 -5 10 10"><polygon points="4,0 -3,3.5 -3,-3.5" fill="${BLUE}" opacity=".5"/></svg></div>`,iconSize:[10,10],iconAnchor:[5,5]})}).addTo(map));
+  }
+
+  pts.forEach((p,i)=>{
+    const col=CADENA_CLR[p.cadena]||'#888', isSel=selIdx===i, sz=isSel?30:22;
+    const icon=L.divIcon({className:'',html:`<div class="bat-marker${isSel?' selected':''}" style="width:${sz}px;height:${sz}px;background:${col};font-size:${isSel?11:9}px;border:${isSel?'2.5px':'2px'} solid rgba(255,255,255,.6)">${p.orden}</div>`,iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]});
+    const m=L.marker([p.lat,p.lon],{icon}).addTo(map);
+    const t=times[i];
+    const mapsUrl=`https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lon}&travelmode=driving`;
+    const wazeUrl=`https://waze.com/ul?ll=${p.lat},${p.lon}&navigate=yes`;
+    const cigBlock=p.cigarrera?`<div class="popup-cig"><span>🚬</span><span class="popup-cig-text">${esc(p.cigarrera)}${p.cant_cig?' × '+p.cant_cig:''}</span></div>`:'';
+    const comBlock=p.com_cig?`<div class="popup-grid" style="margin-bottom:6px"><div class="popup-key">Comunicación Cig.</div><div class="popup-val" style="color:#1A4BAD;font-weight:500">${esc(p.com_cig)}</div></div>`:'';
+
+    m.bindPopup(`<div class="popup-inner">
+      <div class="popup-header">
+        <div class="popup-num" style="background:${col}">${p.orden}</div>
+        <div>
+          <div class="popup-title">${esc(p.pos)}</div>
+          <div class="popup-cadena" style="color:${col}">${p.cadena} · ${esc(p.distrito)}</div>
+          <div class="popup-hora">⏰ ${fmt(t.start)} – ${fmt(t.end)} · ${t.dur} min</div>
+        </div>
+      </div>
+      <div class="ot-block">
+        <div class="ot-label"><svg width="11" height="11" viewBox="0 0 24 24" fill="#1A4BAD"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1s-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg> OT / Tarea a realizar</div>
+        <div class="ot-text">${esc(p.ot)||'—'}</div>
+      </div>
+      <div class="popup-grid">
+        <div class="popup-key">Proyecto</div><div class="popup-val">${esc(p.proyecto)}</div>
+        <div class="popup-key">Dirección</div><div class="popup-val">${esc(p.direccion)||'—'}</div>
+      </div>
+      ${comBlock}
+      ${cigBlock}
+      <div class="popup-actions">
+        <a class="popup-btn popup-btn-maps" href="${mapsUrl}" target="_blank">📍 Google Maps</a>
+        <a class="popup-btn popup-btn-waze" href="${wazeUrl}" target="_blank">🔵 Waze</a>
+      </div>
+    </div>`,{maxWidth:360});
+
+    m.on('click',()=>{selIdx=(selIdx===i?null:i);renderMap();renderList();if(selIdx!==null)scrollToCard(selIdx);});
+    markers.push(m);
+  });
+
+  if(ll.length) map.fitBounds(L.latLngBounds(ll).pad(.13));
+  renderList(); renderStats();
+}
+
+function renderList(){
+  const pts=getPoints(), times=calcTimes(pts);
+  document.getElementById('sidebarTitle').textContent=`Día ${curDay} · ${pts.length} paradas`;
+  document.getElementById('routeList').innerHTML=pts.map((p,i)=>{
+    const t=times[i], col=CADENA_CLR[p.cadena]||'#888', isSel=selIdx===i;
+    const mapsUrl=`https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lon}&travelmode=driving`;
+    const cig=p.cigarrera?`<div class="stop-cig">🚬 ${esc(p.cigarrera)}${p.cant_cig?' ×'+p.cant_cig:''}</div>`:'';
+    return`<div class="stop-card${isSel?' selected':''}" id="card-${i}" onclick="selectCard(${i})">
+      <div class="stop-num-wrap">
+        <div class="stop-num" style="background:${col}">${p.orden}</div>
+        ${i<pts.length-1?'<div class="stop-conn"></div>':''}
+      </div>
+      <div class="stop-body">
+        <div class="stop-name">${esc(p.pos)}</div>
+        <div class="stop-meta">
+          <span class="stop-time">${fmt(t.start)}</span>
+          <span class="stop-dist">${esc(p.distrito)}</span>
+          <span class="stop-dur">${t.dur}min</span>
+        </div>
+        <div class="stop-ot">${esc(p.ot)||'—'}</div>
+        ${cig}
+        <a class="nav-link" href="${mapsUrl}" target="_blank">↗ Navegar</a>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderStats(){
+  const pts=getPoints(), times=calcTimes(pts);
+  if(!pts.length){document.getElementById('statsBar').innerHTML='';return;}
+  const last=times[times.length-1];
+  const cadenas={};pts.forEach(p=>cadenas[p.cadena]=(cadenas[p.cadena]||0)+1);
+  const proyectos=[...new Set(pts.map(p=>p.proyecto))];
+  document.getElementById('statsBar').innerHTML=
+    `<span class="stat-item"><span class="stat-val">08:00</span><span class="stat-lbl">Inicio</span></span>`+
+    `<span class="stat-sep"></span>`+
+    `<span class="stat-item"><span class="stat-val">${fmt(last.end)}</span><span class="stat-lbl">Fin est.</span></span>`+
+    `<span class="stat-sep"></span>`+
+    `<span class="stat-item"><span class="stat-val" style="font-size:16px">${pts.length}</span><span class="stat-lbl">Visitas</span></span>`+
+    `<span class="stat-sep"></span>`+
+    Object.entries(cadenas).map(([k,v])=>`<span class="stat-item"><span class="stat-val" style="color:${CADENA_CLR[k]||'#888'};font-size:15px">${v}</span><span class="stat-lbl">${k}</span></span>`).join('')+
+    `<span class="stat-sep"></span>`+
+    `<div style="display:flex;gap:4px;flex-wrap:wrap">${proyectos.map(p=>`<span class="ptag">${esc(p)}</span>`).join('')}</div>`;
+}
+
+function selectCard(i){selIdx=(selIdx===i?null:i);renderMap();if(selIdx!==null)markers[selIdx]?.openPopup();}
+function scrollToCard(i){document.getElementById('card-'+i)?.scrollIntoView({behavior:'smooth',block:'nearest'});}
+window.selectDay=(d,btn)=>{curDay=d;selIdx=null;document.querySelectorAll('.day-pill').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderMap();};
+window.openFullRoute=()=>{
+  const pts=getPoints();if(!pts.length)return;
+  const o=`${pts[0].lat},${pts[0].lon}`,d=`${pts[pts.length-1].lat},${pts[pts.length-1].lon}`;
+  const wp=pts.slice(1,-1).map(p=>`${p.lat},${p.lon}`).join('|');
+  window.open(`https://www.google.com/maps/dir/?api=1&origin=${o}&destination=${d}&waypoints=${wp}&travelmode=driving`,'_blank');
+};
+window.addEventListener('resize',()=>{selIdx=null;renderMap();});
+setTimeout(renderMap,120);
+</script>
+</body>
+</html>
